@@ -15,7 +15,7 @@ app.get("/", async (req, res) => {
         "select * from posts order by time_posted desc;"
       );
 
-      res.render("pages/index", {
+      res.render("index", {
         feed: "Recent Posts",
         posts: posts.rows
       });
@@ -31,14 +31,15 @@ app.post("/posts", async (req, res) => {
 
     try {
       const posts = await db.query(
-        "select * from posts where author = $1 order by time_posted desc", 
+        "select * from posts where author = $1 order by time_posted desc;", 
         [req.body.name]
       );
     
-      res.render("pages/index", {
+      res.render("index", {
         feed: "Posts by " + req.body.name,
         posts: posts.rows
       });
+
     } catch (err) {
       console.log(err);
     }
@@ -48,30 +49,31 @@ app.post("/posts", async (req, res) => {
 app.get("/posts/:id", async (req, res) => {    
     try {
       const post = await db.query(
-        "select * from posts where pid = " + req.params.id
+        "select * from posts where pid = $1;", 
+        [req.params.id]
       );
 
       const comments = await db.query(
-        "select * from comments where pid = " + req.params.id
+        "select * from comments where pid = $1 order by time_posted asc;", 
+        [req.params.id]
       );
 
-      res.render("pages/post", {
+      res.render("post", {
         post: post.rows[0],
         comments: comments.rows
       });
-
     } catch (err) {
       console.log(err);
     }
 });
 
 // New post form
-app.get("/new_post.html", (req, res) => {
-    res.sendFile(path.join(__dirname, 'new_post.html'));
+app.get("/addPost", (req, res) => {
+  res.sendFile(path.join(__dirname, 'views/new_post.html'));
 });
 
 // Create post
-app.post("/posts/new", async (req, res) => {
+app.post("/addPost", async (req, res) => {
     console.log(req.body);
 
     try {
