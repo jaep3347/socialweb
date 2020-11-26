@@ -4,20 +4,49 @@ const db = require("./db");
 const app = express();
 var path = require('path');
 var bodyParser = require('body-parser');
+const bcrypt = require('bcrypt');
+const { request } = require("http");
+const { response } = require("express");
+const passport = require('passport');
+const flash = require('express-flash')
+const session = require('express-session')
+const methodOverride = require('method-override')
+
+
+const initializePassport = require('./passport-config');
+initializePassport(
+  passport,
+  email => users.find(user => user.email === email),
+  id => users.find(user => user.id === id)
+)
+const users = [];
+
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: false }));
+// app.use(express.urlencoded({extended: false}));
+app.use(flash())
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false
+}))
+app.use(passport.initialize())
+app.use(passport.session())
+app.use(methodOverride('_method'))
 
-// Get all posts
-app.get("/", async (req, res) => {
+
+// Get all posts (Home Page)
+app.get("/", checkAuthenticated, async (req, res) => {
     try {
       const posts = await db.query(
         "select * from posts order by time_posted desc;"
       );
 
-      res.render("index", {
+      res.render("pages/index", {
         feed: "Recent Posts",
-        posts: posts.rows
+        posts: posts.rows,
+        name: req.user.name
       });
 
     } catch (err) {
@@ -25,21 +54,88 @@ app.get("/", async (req, res) => {
     }
 });
 
+// Guest Page
+app.get("/guest", checkNotAuthenticated, async (req, res) => {
+  try {
+    const posts = await db.query(
+      "select * from posts order by time_posted desc;"
+    );
+
+    res.render("pages/guest", {
+      feed: "Recent Posts",
+      posts: posts.rows
+    });
+  } catch (err) {
+    console.log(err);
+  }
+})
+
+// Log In Page
+app.get("/login", checkNotAuthenticated, async (req, res) => {
+  try {
+    res.render("pages/login")
+  } catch (err) {
+    console.log(err);
+  }
+})
+
+// Log In Page POST
+app.post('/login', checkNotAuthenticated, passport.authenticate('local', {
+  successRedirect: '/',
+  failureRedirect: '/login',
+  failureFlash: true
+}))
+
+
+// Sign Up Page
+app.get("/register", checkNotAuthenticated, async (req, res) => {
+  try {
+    res.render("pages/register")
+  } catch (err) {
+    console.log(err);
+  }
+})
+
+// Sign Up Page POST
+app.post("/register", checkNotAuthenticated, async (req, res) => {
+  try {
+    const hashedPassword = await bcrypt.hash(req.body.password, 10)
+    users.push({
+      id: Date.now().toString(),
+      name: req.body.name,
+      email: req.body.email,
+      password: hashedPassword
+    })
+    res.redirect('/login')
+  } catch (err) {
+    res.redirect('/register')
+    console.log(err);
+  }
+  console.log(users);
+})
+
 // Get feed from search
 app.post("/posts", async (req, res) => {
     console.log(req.body.name);
 
     try {
       const posts = await db.query(
-        "select * from posts where author = $1 order by time_posted desc;", 
+        "select * from posts where author = $1 order by time_posted desc", 
         [req.body.name]
       );
-    
-      res.render("index", {
-        feed: "Posts by " + req.body.name,
-        posts: posts.rows
-      });
-
+      if (req.isAuthenticated()) {
+        res.render("pages/index", {
+          feed: "Posts by " + req.body.name,
+          posts: posts.rows,
+          name: req.user.name
+        });
+      } else {
+        res.render("pages/guest", {
+          feed: "Posts by " + req.body.name,
+          posts: posts.rows
+        })
+      }
+      
     } catch (err) {
       console.log(err);
     }
@@ -49,31 +145,37 @@ app.post("/posts", async (req, res) => {
 app.get("/posts/:id", async (req, res) => {    
     try {
       const post = await db.query(
-        "select * from posts where pid = $1;", 
-        [req.params.id]
+        "select * from posts where pid = " + req.params.id
       );
 
       const comments = await db.query(
-        "select * from comments where pid = $1 order by time_posted asc;", 
-        [req.params.id]
+        "select * from comments where pid = " + req.params.id
       );
 
-      res.render("post", {
+      if (req.isAuthenticated()) {
+        username = req.user.name
+      } else {
+        username = null
+      }
+
+      res.render("pages/post", {
         post: post.rows[0],
-        comments: comments.rows
+        comments: comments.rows,
+        name: username
       });
+
     } catch (err) {
       console.log(err);
     }
 });
 
 // New post form
-app.get("/addPost", (req, res) => {
-  res.sendFile(path.join(__dirname, 'views/new_post.html'));
+app.get("/new_post.html", (req, res) => {
+    res.sendFile(path.join(__dirname, 'new_post.html'));
 });
 
 // Create post
-app.post("/addPost", async (req, res) => {
+app.post("/posts/new", async (req, res) => {
     console.log(req.body);
 
     try {
@@ -107,6 +209,27 @@ app.post("/posts/:id/addComment", async (req, res) => {
       console.log(err);
     }
   });
+
+
+function checkAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+      return next()
+    }
+  
+    res.redirect('/guest')
+}
+  
+function checkNotAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+      return res.redirect('/')
+    }
+    next()
+}
+
+app.delete('/logout', (req, res) => {
+  req.logOut()
+  res.redirect('/')
+})
 
 const port = process.env.PORT || 3001;
 app.listen(port, () => {

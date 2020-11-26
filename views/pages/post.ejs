@@ -20,13 +20,16 @@
                       <strong><%= comment.author %></strong> <%= comment.content %>
               <% }); %>
             </ul>
-            <div class="card-action">
+            <% if (name !== null) { %>
+              <div class="card-action">
                 <form action="/posts/<%= post.pid %>/addComment" method="POST">
                     <input placeholder="Name" type="text" id="author" name="author"/>
                     <input placeholder="comment" type="text" id="content" name="content"/>
                     <input type="submit" name="submit" value="Submit">
                 </form>
             </div>
+            <% } %>
+
           </div>
         </div>
       </div>

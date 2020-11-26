@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome!</title>
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script> -->
+</head>
+<body>
+    <a href="/"><h1>Home</h1></a>
+    <br>
+    <a href="/login">Log In</a> &nbsp;&nbsp; <a href="/register">Sign Up</a>
+    <br><br><br>
+
+    <h4>Search for Posts</h4>
+    <form action="/posts" method="post">
+        <input placeholder = "Name" type="text" id="name" name="name">
+        <input type="submit" name="submit" value="Submit">
+    </form>
+    <br><br><br>
+
+    <h4><%= feed %></h4>
+    <ul>
+        <% posts.forEach(function(post) { %>
+            <li>
+                <a href="/posts/<%= post.pid %>"><strong><%= post.author %></strong> <%= post.content %></a>
+            </li>
+        <% }); %>
+    </ul>
+
+</body>
+</html>

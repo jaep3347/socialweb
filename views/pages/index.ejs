@@ -6,21 +6,25 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script> -->
 </head>
 <body>
-    <a href="/">Home</a>
-    <br>
+    <a href="/"><h1>Home</h1></a>
+    <h1>Hi <%=name %></h1>
 
-    <p>Search for Posts</p>
+    <form action="/logout?_method=DELETE" method="POST">
+        <button type="submit">Log Out</button>
+    </form>
+    <br><br><br>
+
+    <h4>Search for Posts</h4>
     <form action="/posts" method="post">
         <input placeholder = "Name" type="text" id="name" name="name">
         <input type="submit" name="submit" value="Submit">
     </form>
-    <br>
+    <br><br><br>
 
-    <!-- <a href="../new_post.html">Create Post</a> -->
-    <a href="/addPost">Create Post</a>
-    <br>
+    <a href="../../new_post.html">Create Post</a>
+    <br><br><br>
 
-    <p><%= feed %></p>
+    <h4><%= feed %></h4>
     <ul>
         <% posts.forEach(function(post) { %>
             <li>
