@@ -116,26 +116,32 @@ app.post("/register", checkNotAuthenticated, async (req, res) => {
 
 // Get feed from search
 app.post("/posts", async (req, res) => {
-    console.log(req.body.name);
+    console.log(req.body.terms);
+
+    const exclude = ["and", "of", "is", "are", "how", "where", "what", "when", "who"];
+    var lowercase = req.body.terms.toLowerCase().split(" ");
+    var keywords = lowercase.filter(word => !exclude.includes(word));
+    console.log(keywords);
 
     try {
+
       const posts = await db.query(
-        "select * from posts where author = $1 order by time_posted desc", 
-        [req.body.name]
-      );
+        "select * from posts where content ilike '%" + keywords.join("%' or content ilike '%") + "%';"
+      )
+
       if (req.isAuthenticated()) {
         res.render("pages/index", {
-          feed: "Posts by " + req.body.name,
-          posts: posts.rows,
+          feed: "Posts for " + req.body.terms,
+          posts: posts,
           name: req.user.name
         });
       } else {
         res.render("pages/guest", {
-          feed: "Posts by " + req.body.name,
+          feed: "Posts for " + req.body.terms,
           posts: posts.rows
         })
       }
-      
+
     } catch (err) {
       console.log(err);
     }

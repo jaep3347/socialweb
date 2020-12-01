@@ -7,7 +7,7 @@
 </head>
 <body>
     <a href="/"><h1>Home</h1></a>
-    <h1>Hi <%=name %></h1>
+    <h1>Hi <%= name %></h1>
 
     <form action="/logout?_method=DELETE" method="POST">
         <button type="submit">Log Out</button>
@@ -16,7 +16,7 @@
 
     <h4>Search for Posts</h4>
     <form action="/posts" method="post">
-        <input placeholder = "Name" type="text" id="name" name="name">
+        <input placeholder = "Looking for..." type="text" id="terms" name="terms">
         <input type="submit" name="submit" value="Submit">
     </form>
     <br><br><br>
