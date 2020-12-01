@@ -20,6 +20,8 @@ initializePassport(
   id => users.find(user => user.id === id)
 )
 const users = [];
+let numComments = 0;
+let numPosts = 0;
 
 
 app.set("view engine", "ejs");
@@ -46,7 +48,9 @@ app.get("/", checkAuthenticated, async (req, res) => {
       res.render("pages/index", {
         feed: "Recent Posts",
         posts: posts.rows,
-        name: req.user.name
+        name: req.user.name,
+        numComments: numComments,
+        numPosts: numPosts
       });
 
     } catch (err) {
@@ -133,7 +137,9 @@ app.post("/posts", async (req, res) => {
         res.render("pages/index", {
           feed: "Posts for " + req.body.terms,
           posts: posts,
-          name: req.user.name
+          name: req.user.name,
+          numComments: numComments,
+          numPosts: numPosts
         });
       } else {
         res.render("pages/guest", {
@@ -189,7 +195,8 @@ app.post("/posts/new", async (req, res) => {
         "insert into posts (author, content, time_posted) values ($1, $2, now()) returning *;",
         [req.body.author, req.body.content]
       );
-
+      numPosts += 1;
+      console.log(numPosts);
       console.log(results);
 
       res.redirect("/posts/" + results.rows[0].pid);
@@ -207,7 +214,8 @@ app.post("/posts/:id/addComment", async (req, res) => {
         "insert into comments (pid, author, content, time_posted) values ($1, $2, $3, now()) returning *;",
         [req.params.id, req.body.author, req.body.content]
       );
-
+      numComments += 1;
+      console.log(numComments);
       console.log(new_comment);
 
       res.redirect("/posts/" + req.params.id);

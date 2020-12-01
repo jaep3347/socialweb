@@ -7,8 +7,9 @@
 </head>
 <body>
     <a href="/"><h1>Home</h1></a>
-    <h1>Hi <%= name %></h1>
-
+    <h1>Hi <%=name %></h1>
+    <p>Number of Posts You Made: <%=numPosts %></p>
+    <p>Number of Comments You Made: <%=numComments %></p>
     <form action="/logout?_method=DELETE" method="POST">
         <button type="submit">Log Out</button>
     </form>
