@@ -136,7 +136,7 @@ app.post("/posts", async (req, res) => {
       if (req.isAuthenticated()) {
         res.render("pages/index", {
           feed: "Posts for " + req.body.terms,
-          posts: posts,
+          posts: posts.rows,
           name: req.user.name,
           numComments: numComments,
           numPosts: numPosts
