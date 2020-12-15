@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome!</title>
+</head>
+<body>
+    <p>Related Users</p>
+    <% users.forEach(function(user) { %>
+        <li>
+            <%= user %>
+        </li>
+    <% }); %>
+    <p>Related Content</p>
+    <ul>
+        <li>
+            <%= posts[1].content %>
+        </li>
+        <li>
+            <%= posts[2].content %>
+        </li>
+        <li>
+            <%= posts[0].content %>
+        </li>
+    </ul>
+</body>
+</html>

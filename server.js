@@ -23,11 +23,9 @@ app.get("/", async (req, res) => {
     );
 
     const favorites = await db.query(
-      "select p.content from posts as p join favorites as f on p.pid = f.pid where f.uid = $1;",
+      "select p.content from posts as p join favorites as f on p.pid = f.pid where f.uid = $1 order by p.time_posted desc;",
       [req.session.uid]
     );
-
-    console.log(favorites.rows);
 
     if (req.session.loggedin) {
       res.render("pages/index", {
@@ -43,14 +41,13 @@ app.get("/", async (req, res) => {
       res.render("pages/index", {
         loggedin: false,  
         feed: "Recent Posts",
-        posts: posts.rows,
+        posts: posts.rows.slice(0,3),
       });
     }
   } catch (err) {
     console.log(err);
   }
 });
-
 
 // Log In Page
 app.get("/login", async (req, res) => {
@@ -59,7 +56,46 @@ app.get("/login", async (req, res) => {
   } catch (err) {
     console.log(err);
   }
-})
+});
+
+app.get("/:id/vector", async (req, res) => {
+  try {
+    const exclude = ["and", "of", "is", "are", "how", "where", "what", "when", "who", "for"];
+
+    const posts = await db.query(
+      "select p.content from posts as p join favorites as f on f.pid = p.pid where f.uid = $1;",
+      [req.params.id]
+    );
+    var words = posts.rows.map(post => post.content.toLowerCase().split(" ")).join().split(",");
+    var keywords = words.filter(word => !exclude.includes(word));
+    // console.log(words);
+    console.log(keywords);
+
+    var numVector = new Object();
+    keywords.forEach(function (word) {
+      if (word in numVector) {
+        numVector[word] = numVector[word] + 1;
+      } else {
+        numVector[word] = 1;
+      }
+    });
+
+    var ratioVector = new Object();
+    Object.keys(numVector).forEach(word => {
+      ratioVector[word] = numVector[word] / keywords.length
+    });
+    console.log(ratioVector);
+
+    res.render("pages/vector", {
+      posts: posts.rows,
+      numVector: JSON.stringify(numVector),
+      ratioVector: JSON.stringify(ratioVector)
+    });
+    
+  } catch (err) {
+    console.log(err);
+  }
+});
 
 // Log In Page POST
 app.post('/login', async (req, res) => {
@@ -120,21 +156,23 @@ app.post("/posts", async (req, res) => {
 
     try {
       const posts = await db.query(
-        "select * from posts where content ilike '%" + keywords.join("%' or content ilike '%") + "%';"
-      )
+        "select * from posts where content ilike '%" + keywords.join("%' or content ilike '%") + "%' order by time_posted asc;"
+      );
+
+      const favorites = await db.query(
+        "select p.content from posts as p join favorites as f on p.pid = f.pid where f.uid = $1 order by p.time_posted desc;",
+        [req.session.uid]
+      );
 
       if (req.session.loggedin) {
         res.render("pages/index", {
           feed: "Posts for " + req.body.terms,
           posts: posts.rows,
           name: req.session.name,
+          loggedin: true,
+          favorites: favorites.rows,
           numComments: req.session.numComments,
           numPosts: req.session.numPosts
-        });
-      } else {
-        res.render("pages/index", {
-          feed: "Posts for " + req.body.terms,
-          posts: posts.rows,
         });
       }
     } catch (err) {
@@ -146,7 +184,7 @@ app.post("/posts", async (req, res) => {
 app.get("/posts/:id", async (req, res) => {    
   try {
     const post = await db.query(
-      "select p.content, u.name from posts as p join users as u on p.uid = u.uid where p.pid = $1;",
+      "select p.pid, p.content, u.name from posts as p join users as u on p.uid = u.uid where p.pid = $1;",
       [req.params.id]
     );
 
@@ -158,7 +196,20 @@ app.get("/posts/:id", async (req, res) => {
     var favorite = await db.query(
       "select * from favorites where pid = $1 and uid = $2;",
       [req.params.id, req.session.uid]
-    )
+    );
+
+    const users = await db.query(
+      "select f.uid from posts as p join favorites as f on p.pid = f.pid where p.pid = $1;",
+      [req.params.id]
+    );
+    
+    let uids = users.rows.filter(user => user.uid != req.session.uid);
+    uids = uids.map(uid => uid.uid);
+
+    const relatedContent = await db.query(
+      "select pid, content from posts where uid = " + uids.join(" or uid = ") + ";"
+    );
+    console.log(relatedContent.rows);
 
     if (favorite.rows[0]) {
       favorite = true;
@@ -169,7 +220,8 @@ app.get("/posts/:id", async (req, res) => {
         post: post.rows[0],
         comments: comments.rows,
         loggedin: true,
-        favorite: favorite
+        favorite: favorite,
+        related: relatedContent.rows[1]
       });
     } else {
       res.render("pages/post", {
@@ -187,7 +239,7 @@ app.get("/posts/:id", async (req, res) => {
 
 // New post form
 app.get("/new_post.html", (req, res) => {
-    res.sendFile(path.join(__dirname, 'new_post.html'));
+  res.sendFile(path.join(__dirname, 'new_post.html'));
 });
 
 // Create post
@@ -198,6 +250,11 @@ app.post("/posts/new", async (req, res) => {
     const results = await db.query(
       "insert into posts (uid, content, time_posted) values ($1, $2, now()) returning *;",
       [req.session.uid, req.body.content]
+    );
+
+    await db.query(
+      "update users set posts = $1 where uid = $2;",
+      [req.session.numPosts + 1, req.session.uid]
     );
 
     req.session.numPosts += 1;
@@ -231,13 +288,38 @@ app.post("/posts/:id/addComment", async (req, res) => {
       [req.params.id, req.session.uid, req.body.content]
     );
 
-    req.session.numComments += 1;
     await db.query(
       "update users set comments = $1 where uid = $2;",
       [req.session.numComments + 1, req.session.uid]
     );
 
+    req.session.numComments += 1;
+
     res.redirect("/posts/" + req.params.id);
+  } catch (err) {
+    console.log(err);
+  }
+});
+
+app.get("/posts/:id/relatedContent", async (req, res) => {
+  try {
+    const users = await db.query(
+      "select f.uid from posts as p join favorites as f on p.pid = f.pid where p.pid = $1;",
+      [req.params.id]
+    );
+    
+    let uids = users.rows.filter(user => user.uid != req.session.uid);
+    uids = uids.map(uid => uid.uid);
+
+    const relatedContent = await db.query(
+      "select pid, content from posts where uid = " + uids.join(" or uid = ") + " order by time_posted desc;"
+    );
+    console.log(relatedContent);
+
+    res.render("pages/related_content", {
+      users: uids,
+      posts: relatedContent.rows
+    });
   } catch (err) {
     console.log(err);
   }

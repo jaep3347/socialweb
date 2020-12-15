@@ -5,8 +5,8 @@
     <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script> -->
     <style>
-        ul > :first-child {
-            background: rgb(238, 247, 133);
+        a {
+            color: blue;
         }
     </style>
 </head>
@@ -55,15 +55,17 @@
         <br><br><br>
 
         <h3>Favorites</h3>
-        <ul>
-            <% if (favorites) { %> 
-                <% favorites.forEach(function(favorite) { %>
-                    <li>
-                        <%= favorite.content %>
-                    </li>
-                <% }); %>
-            <% }; %>
-        </ul>
+        <% if (favorites) { %> 
+            <ul>
+            <% favorites.forEach(function(favorite) { %>
+                <li>
+                    <%= favorite.content %>
+                </li>
+            <% }); %>
+            </ul>
+        <% } else { %>
+            <p>No favorites yet!</p>
+        <% }; %>
     
         <form action="/logout?_method=DELETE" method="post">
             <button type="submit">Log Out</button>
@@ -91,7 +93,7 @@
     <ul>
         <% posts.forEach(function(post) { %>
             <li>
-                <a href="/posts/<%= post.pid %>"><strong><%= post.author %></strong> <%= post.content %></a>
+                <a href="/posts/<%= post.pid %>"><%= post.content %></a>
             </li>
         <% }); %>
     </ul>

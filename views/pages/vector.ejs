@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome!</title>
+</head>
+<body>
+    <p>Favorites</p>
+    <% posts.forEach(function(post) { %>
+        <li>
+            <%= post.content %>
+        </li>
+    <% }); %>
+
+    <p>Numerical Vector</p>
+    <%= numVector %>
+
+    <p>Ratio Vector</p>
+    <%= ratioVector %>
+    
+</body>
+</html>
