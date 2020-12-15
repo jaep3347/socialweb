@@ -16,19 +16,25 @@
     <div class="row">
         <div class="col s12 m6">
           <div class="card blue-grey darken-1">
+            
+            <% if (loggedin && favorite !== true) { %>
+              <form action="/posts/<%= post.pid %>/addFavorite" method="post">
+                <button type="submit">Favorite</button>
+              </form>
+            <% }; %>
+
             <div class="card-content white-text">
-              <span class="card-title"><strong><%= post.author %></strong> <%= post.content %></span>
+              <span class="card-title"><strong><%= post.name %></strong> <%= post.content %></span>
             </div>
             <ul>
               <% comments.forEach(function(comment) { %>
                   <li>
-                      <strong><%= comment.author %></strong> <%= comment.content %>
+                      <strong><%= comment.name %></strong> <%= comment.content %>
               <% }); %>
             </ul>
-            <% if (name !== null) { %>
+            <% if (loggedin) { %>
               <div class="card-action">
-                <form action="/posts/<%= post.pid %>/addComment" method="POST">
-                    <input placeholder="Name" type="text" id="author" name="author"/>
+                <form action="/posts/<%= post.pid %>/addComment" method="post">
                     <input placeholder="comment" type="text" id="content" name="content"/>
                     <input type="submit" name="submit" value="Submit">
                 </form>

@@ -12,47 +12,68 @@
 </head>
 <body>
     <a href="/"><h1>Home</h1></a>
-    <h1>Hi <%= name %></h1>
 
-    <h3>Dashboard</h3>
-    <p>Number of Posts You Made: <%= numPosts %></p>
-    <p>Number of Comments You Made: <%= numComments %></p>
+    <% if (loggedin) { %>
+        <h1>Hi <%= name %></h1>
+    <% }; %>
 
-    <h4>Badges</h4>
-    <% if (numPosts >= 1) { %>
-        <img src="https://img.icons8.com/ultraviolet/64/000000/filled-star--v1.png"/>
-    <% } else { %>
-        <img src="https://img.icons8.com/ultraviolet/64/000000/filled-star--v2.png"/>
+    <% if (loggedin) { %>
+        <h3>Dashboard</h3>
+        <p>Number of Posts You Made: <%= numPosts %></p>
+        <p>Number of Comments You Made: <%= numComments %></p>
     <% }; %>
-    First Post! 
-    <br>
-    <% if (numComments >= 1) { %>
-        <img src="https://img.icons8.com/ultraviolet/64/000000/filled-star--v1.png"/>
-    <% } else { %>
-        <img src="https://img.icons8.com/ultraviolet/64/000000/filled-star--v2.png"/>
-    <% }; %>
-    First Comment! 
-    <br>
-    <% if (numPosts >= 5) { %>
-        <img src="https://img.icons8.com/ultraviolet/64/000000/filled-star--v1.png"/>
-    <% } else { %>
-        <img src="https://img.icons8.com/ultraviolet/64/000000/filled-star--v2.png"/>
-    <% }; %>
-    Master Poster! 
-    <br> 
-    <% if (numPosts >= 5) { %>
-        <img src="https://img.icons8.com/ultraviolet/64/000000/filled-star--v1.png"/>
-    <% } else { %>
-        <img src="https://img.icons8.com/ultraviolet/64/000000/filled-star--v2.png"/>
-    <% }; %>
-    Master Commenter!
 
-    <br><br><br>
+    <% if (loggedin) { %>
+        <h4>Badges</h4>
+        <% if (numPosts >= 1) { %>
+            <img src="https://img.icons8.com/ultraviolet/64/000000/filled-star--v1.png"/>
+        <% } else { %>
+            <img src="https://img.icons8.com/ultraviolet/64/000000/filled-star--v2.png"/>
+        <% }; %>
+        First Post! 
+        <br>
+        <% if (numComments >= 1) { %>
+            <img src="https://img.icons8.com/ultraviolet/64/000000/filled-star--v1.png"/>
+        <% } else { %>
+            <img src="https://img.icons8.com/ultraviolet/64/000000/filled-star--v2.png"/>
+        <% }; %>
+        First Comment! 
+        <br>
+        <% if (numPosts >= 5) { %>
+            <img src="https://img.icons8.com/ultraviolet/64/000000/filled-star--v1.png"/>
+        <% } else { %>
+            <img src="https://img.icons8.com/ultraviolet/64/000000/filled-star--v2.png"/>
+        <% }; %>
+        Master Poster! 
+        <br> 
+        <% if (numPosts >= 5) { %>
+            <img src="https://img.icons8.com/ultraviolet/64/000000/filled-star--v1.png"/>
+        <% } else { %>
+            <img src="https://img.icons8.com/ultraviolet/64/000000/filled-star--v2.png"/>
+        <% }; %>
+        Master Commenter!
+        <br><br><br>
 
-    <form action="/logout?_method=DELETE" method="POST">
-        <button type="submit">Log Out</button>
-    </form>
-    <br><br><br>
+        <h3>Favorites</h3>
+        <ul>
+            <% if (favorites) { %> 
+                <% favorites.forEach(function(favorite) { %>
+                    <li>
+                        <%= favorite.content %>
+                    </li>
+                <% }); %>
+            <% }; %>
+        </ul>
+    
+        <form action="/logout?_method=DELETE" method="post">
+            <button type="submit">Log Out</button>
+        </form>
+        <br><br>
+    <% } else { %>
+        <br>
+        <a href="/login">Log In</a> &nbsp;&nbsp; <a href="/register">Sign Up</a>
+        <br><br><br>
+    <% }; %>
 
     <h4>Search for Posts</h4>
     <form action="/posts" method="post">
@@ -61,8 +82,10 @@
     </form>
     <br><br><br>
 
+    <% if (loggedin) { %> 
     <a href="../../new_post.html">Create Post</a>
     <br><br><br>
+    <% }; %>
 
     <h4><%= feed %></h4>
     <ul>
